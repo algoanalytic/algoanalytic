@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python extractor.py"
+cronSchedule = "0 19 * * *"
+restartPolicyType = "never"

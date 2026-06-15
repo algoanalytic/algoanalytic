@@ -2,9 +2,11 @@ import asyncio
 import os
 import re
 import glob
+import base64
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 from telethon import TelegramClient
+from telethon.sessions import StringSession
 from telethon.tl.types import (
     User, MessageMediaDocument, MessageService,
     MessageActionPhoneCall, PhoneCallDiscardReasonMissed,
@@ -39,6 +41,19 @@ def find_sessions():
     return [s.replace(".session", "") for s in glob.glob("*.session")]
 
 
+def get_client(rep_name: str) -> TelegramClient:
+    """Use SESSION_STRING env var on Railway, local .session file otherwise."""
+    session_b64 = os.environ.get("SESSION_STRING")
+    if session_b64:
+        # Decode base64 → write temp .session file → use it
+        session_bytes = base64.b64decode(session_b64)
+        tmp_path = "/tmp/railway.session"
+        with open(tmp_path, "wb") as f:
+            f.write(session_bytes)
+        return TelegramClient(tmp_path.replace(".session", ""), API_ID, API_HASH)
+    return TelegramClient(rep_name, API_ID, API_HASH)
+
+
 def extract_companies(text: str) -> list[str]:
     words = text.split()
     found = []
@@ -69,7 +84,7 @@ def is_one_word_reply(text: str) -> bool:
 
 
 async def extract(rep_name: str):
-    client = TelegramClient(rep_name, API_ID, API_HASH)
+    client = get_client(rep_name)
     await client.connect()
 
     if not await client.is_user_authorized():
@@ -309,6 +324,13 @@ FLAG: {flag}
 
 
 async def main():
+    # On Railway: REP_NAME env var is required alongside SESSION_STRING
+    rep_name = os.environ.get("REP_NAME")
+    if rep_name:
+        print(f"Railway mode — using REP_NAME={rep_name}")
+        await extract(rep_name)
+        return
+
     sessions = find_sessions()
     if not sessions:
         print("No .session files found. Run auth.py first.")
