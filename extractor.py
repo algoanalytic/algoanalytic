@@ -3,8 +3,26 @@ import os
 import re
 import glob
 import base64
+import urllib.request
+import urllib.parse
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
+
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "8853762167:AAFk3YJsSB-ARNzHoskJWtZ-I4gR6lBl9dg")
+TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID",   "6715159293")
+
+
+def send_telegram(text: str):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    data = urllib.parse.urlencode({
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": text,
+        "parse_mode": "HTML",
+    }).encode()
+    try:
+        urllib.request.urlopen(url, data, timeout=10)
+    except Exception as e:
+        print(f"Telegram send failed: {e}")
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.types import (
@@ -321,6 +339,9 @@ FLAG: {flag}
         f.write(report)
 
     print(f"\nReport saved to: {report_path}")
+
+    header = f"<b>Daily Report — {rep_name} — {date_str}</b>\n\n"
+    send_telegram(header + f"<pre>{report}</pre>")
 
 
 async def main():
