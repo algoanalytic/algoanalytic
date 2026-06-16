@@ -2,7 +2,6 @@ import asyncio
 import os
 import re
 import glob
-import base64
 import urllib.request
 import urllib.parse
 from datetime import datetime, timezone, timedelta
@@ -61,14 +60,9 @@ def find_sessions():
 
 def get_client(rep_name: str) -> TelegramClient:
     """Use SESSION_STRING env var on Railway, local .session file otherwise."""
-    session_b64 = os.environ.get("SESSION_STRING")
-    if session_b64:
-        # Decode base64 → write temp .session file → use it
-        session_bytes = base64.b64decode(session_b64)
-        tmp_path = "/tmp/railway.session"
-        with open(tmp_path, "wb") as f:
-            f.write(session_bytes)
-        return TelegramClient(tmp_path.replace(".session", ""), API_ID, API_HASH)
+    session_str = os.environ.get("SESSION_STRING")
+    if session_str:
+        return TelegramClient(StringSession(session_str), API_ID, API_HASH)
     return TelegramClient(rep_name, API_ID, API_HASH)
 
 
