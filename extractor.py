@@ -13,15 +13,17 @@ TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID",   "6715159293")
 
 def send_telegram(text: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    data = urllib.parse.urlencode({
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": text,
-        "parse_mode": "HTML",
-    }).encode()
-    try:
-        urllib.request.urlopen(url, data, timeout=10)
-    except Exception as e:
-        print(f"Telegram send failed: {e}")
+    # Split into chunks if over 4000 chars
+    chunks = [text[i:i+4000] for i in range(0, len(text), 4000)]
+    for chunk in chunks:
+        data = urllib.parse.urlencode({
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": chunk,
+        }).encode()
+        try:
+            urllib.request.urlopen(url, data, timeout=10)
+        except Exception as e:
+            print(f"Telegram send failed: {e}")
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.types import (
