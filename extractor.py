@@ -335,7 +335,7 @@ FLAG: {flag}
     print(f"\nReport saved to: {report_path}")
 
     header = f"<b>Daily Report — {rep_name} — {date_str}</b>\n\n"
-    send_telegram(header + f"<pre>{report}</pre>")
+    send_telegram(header + report)
 
 
 async def main():
